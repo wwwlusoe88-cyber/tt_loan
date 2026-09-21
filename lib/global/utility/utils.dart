@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 class AppUtils {
-  // ==================== 1. CURRENCY FORMAT (KS) ====================
+  // ==================== 1. CURRENCY FORMAT & PARSE ====================
   static String formatCurrency(num amount) {
     final formatter = NumberFormat('#,###', 'en_US');
     return '${formatter.format(amount)} ks';
   }
 
-  // Text ထဲက input တွေကို calculation အတွက် Double ပြောင်းရန်
   static double parseCurrency(String value) {
     if (value.isEmpty) return 0.0;
     String cleanValue = value.replaceAll(',', '').replaceAll('ks', '').trim();
     return double.tryParse(cleanValue) ?? 0.0;
   }
 
-  // ==================== 2. DATE FORMAT ====================
+  // ==================== 2. DATE FORMAT & TIMESTAMP ====================
   static String formatDate(String dateStr) {
     try {
       final date = DateTime.parse(dateStr);
@@ -148,8 +148,52 @@ class AppUtils {
 
   // ==================== 5. VALIDATIONS ====================
   static bool isValidPhoneNumber(String phone) {
-    // မြန်မာဖုန်းနံပါတ် ဖော်မတ်စစ်ဆေးရန် (ဥပမာ - 09XXXXXXXXX)
     final regExp = RegExp(r'^(09|\+959)\d{7,9}$');
     return regExp.hasMatch(phone);
+  }
+
+  // ==================== 6. LOAN CALCULATION HELPER ====================
+  /// နှုန်းထား (monthlyInterestRate) ကို ရာခိုင်နှုန်းဖြင့် ထည့်ပါ (ဥပမာ - 3% ဆိုလျှင် 3 ဟုထည့်ရန်)
+  static Map<String, double> calculateLoan({
+    required double principal,
+    required double monthlyInterestRate,
+    required int termMonths,
+  }) {
+    // တစ်လချင်းကျသင့်မည့် အတိုးငွေ (Simple Interest per month)
+    double totalInterest = principal * (monthlyInterestRate / 100) * termMonths;
+    double totalAmount = principal + totalInterest;
+    double monthlyPayment = totalAmount / termMonths;
+
+    return {
+      'totalInterest': totalInterest,
+      'totalAmount': totalAmount,
+      'monthlyPayment': monthlyPayment,
+    };
+  }
+}
+
+// ==================== 7. INPUT FORMATTERS ====================
+/// TextField တွင် ငွေပမာဏရိုက်ထည့်ပါက အလိုအလျောက် ကော်မာ (,) ခံပေးမည့် Formatter
+class CurrencyInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    String cleanText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanText.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    final number = int.parse(cleanText);
+    final formatter = NumberFormat('#,###', 'en_US');
+    final newText = formatter.format(number);
+
+    return newValue.copyWith(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
   }
 }
