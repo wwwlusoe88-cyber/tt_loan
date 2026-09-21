@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login/login_screen.dart';
-import 'global/theme/theme.dart';
+import 'package:tt_loan/login/login_screen.dart';
+import 'package:tt_loan/global/theme/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
